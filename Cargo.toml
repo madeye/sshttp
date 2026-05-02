@@ -1,0 +1,22 @@
+[package]
+name = "sshttp"
+version = "0.1.0"
+edition = "2021"
+description = "Tunnel an HTTP CONNECT proxy through an SSH connection (ssh -D, but spoken as HTTP)"
+license = "Apache-2.0"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+dirs = "5"
+rpassword = "7"
+russh = "0.60"
+socket2 = "0.5"
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "io-util", "signal", "sync", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = "thin"
+strip = true
