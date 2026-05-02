@@ -46,35 +46,14 @@ pub async fn serve(
 
 fn apply_tcp_keepalive(sock: &TcpStream, ka: Keepalive) -> std::io::Result<()> {
     let interval = Duration::from_secs(ka.interval_secs);
-    // Idle time before the first probe is sent. 4x interval keeps probing off
-    // the wire on healthy idle connections.
+    // Idle time before the first probe. 4x interval keeps probing off the wire
+    // on healthy idle connections.
     let idle = interval.saturating_mul(4);
-    let probes = TcpKeepalive::new().with_time(idle).with_interval(interval);
-    // `with_retries` (TCP_KEEPCNT) is not portable; use OS default for retry count.
-    let probes = configure_retries(probes, ka.max_missed);
+    let probes = TcpKeepalive::new()
+        .with_time(idle)
+        .with_interval(interval)
+        .with_retries(ka.max_missed);
     SockRef::from(sock).set_tcp_keepalive(&probes)
-}
-
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "fuchsia",
-    target_os = "netbsd",
-))]
-fn configure_retries(ka: TcpKeepalive, retries: u32) -> TcpKeepalive {
-    ka.with_retries(retries)
-}
-
-#[cfg(not(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "fuchsia",
-    target_os = "netbsd",
-)))]
-fn configure_retries(ka: TcpKeepalive, _retries: u32) -> TcpKeepalive {
-    ka
 }
 
 async fn handle_conn(mut sock: TcpStream, ssh: Arc<SshClient>) -> Result<()> {
